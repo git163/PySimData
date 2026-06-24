@@ -20,6 +20,18 @@ venv/
 dist/
 build/
 
+# C++ build
+cmake-build-*/
+.cmake/
+CMakeCache.txt
+CMakeFiles/
+Makefile
+compile_commands.json
+*.a
+*.so
+*.dylib
+*.exe
+
 # Coverage
 *.gcov
 *.info
