@@ -1,0 +1,13 @@
+{
+  "type": "BilateralGaussian",
+  "format": "npy",
+  "params": {
+    "shape": [
+      128,
+      128
+    ],
+    "sigma": 10,
+    "amplitude": 255,
+    "center": null
+  }
+}

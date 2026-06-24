@@ -4,7 +4,7 @@
   "params": {
     "x_range": [
       0,
-      6.283185307179586
+      6.28
     ],
     "num_points": 100,
     "amplitude": 1.0,
