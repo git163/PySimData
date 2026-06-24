@@ -24,4 +24,4 @@ build/
 *.gcov
 *.info
 coverage/
-*/output/
+output/
