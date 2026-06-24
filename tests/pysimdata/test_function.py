@@ -41,3 +41,22 @@ def test_cosh_curve():
     gen = CoshCurve(x_range=(-2, 2), num_points=50)
     data = gen.generate()
     assert data.shape == (100, 50)
+
+
+def test_exponential_decay():
+    """单边指数衰减"""
+    from pysimdata.function import ExponentialDecay
+
+    gen = ExponentialDecay(shape=(64, 64), tau=10, amplitude=255, direction="x")
+    data = gen.generate()
+    assert data.shape == (64, 64)
+
+
+def test_bilateral_gaussian():
+    """双边高斯分布"""
+    from pysimdata.function import BilateralGaussian
+
+    gen = BilateralGaussian(shape=(64, 64), sigma=10, amplitude=255)
+    data = gen.generate()
+    assert data.shape == (64, 64)
+    assert data[32, 32] == 255  # 中心最大
