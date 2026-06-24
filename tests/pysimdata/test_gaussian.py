@@ -22,3 +22,24 @@ def test_gaussian_grid_data_property():
     gen = GaussianGrid()
     _ = gen.generate()
     assert gen.data.shape == (256, 256)
+
+
+def test_gaussian_beam_default():
+    """默认参数生成"""
+    from pysimdata.gaussian import GaussianBeam
+
+    gen = GaussianBeam()
+    data = gen.generate()
+    assert data.shape == (256, 256)
+    # 中心值应接近 amplitude
+    assert data[128, 128] > 200
+
+
+def test_gaussian_beam_custom():
+    """自定义参数"""
+    from pysimdata.gaussian import GaussianBeam
+
+    gen = GaussianBeam(shape=(128, 128), sigma=10, amplitude=200, center=(64, 64))
+    data = gen.generate()
+    assert data.shape == (128, 128)
+    assert data[64, 64] == 200
