@@ -36,3 +36,21 @@ class ErfCurve(BaseGenerator):
             amplitude=amplitude,
             y_shape=y_shape,
         )
+
+    def plot(self, ax=None, **kwargs):
+        """曲线图"""
+        import matplotlib.pyplot as plt
+
+        if self._data is None:
+            raise ValueError("请先调用 generate()")
+
+        if ax is None:
+            _, ax = plt.subplots(figsize=(8, 4))
+
+        y = self._data[0, :]
+        x = np.linspace(self._params.get("x_range", (-3, 3))[0],
+                       self._params.get("x_range", (-3, 3))[1], len(y))
+        ax.plot(x, y)
+        ax.set_title("ErfCurve")
+        ax.grid(True)
+        return ax

@@ -162,27 +162,12 @@ class BaseGenerator:
         # 保存配置
         self.save_config(f"{output_dir}/config.json", enable_timestamp=False)
 
-        # 保存图片
+        # 保存图片 - 调用子类的 plot()
         try:
             import matplotlib.pyplot as plt
-
-            plt.figure(figsize=(6, 5))
-
-            # 判断是一维曲线还是二维图像
-            if self._data is not None and self._data.ndim == 2 and self._data.shape[0] > 1:
-                # 二维图像
-                plt.imshow(self._data, cmap="gray")
-                plt.colorbar()
-            else:
-                # 一维曲线
-                y = self._data[0, :] if self._data.ndim > 1 else self._data
-                x = np.arange(len(y))
-                plt.plot(x, y)
-                plt.grid(True)
-
-            plt.title(name)
-            plt.tight_layout()
-            plt.savefig(f"{output_dir}/preview.png", dpi=150)
+            fig, ax = plt.subplots(figsize=(6, 5))
+            self.plot(ax=ax)
+            fig.savefig(f"{output_dir}/preview.png", dpi=150)
             plt.close()
         except ImportError:
             pass
@@ -219,15 +204,28 @@ class BaseGenerator:
         else:
             raise ValueError(f"不支持的文件格式: {ext}")
 
-    def plot(self, **kwargs) -> None:
-        """可视化（matplotlib）"""
+    def plot(self, ax=None, **kwargs):
+        """可视化，子类可重写"""
         import matplotlib.pyplot as plt
+
         if self._data is None:
             raise ValueError("请先调用 generate()")
-        plt.figure()
-        plt.imshow(self._data, **kwargs)
-        plt.colorbar()
-        plt.show()
+
+        if ax is None:
+            _, ax = plt.subplots(figsize=(6, 5))
+
+        # 默认: 二维图像
+        if self._data.ndim == 2 and self._data.shape[0] > 1:
+            ax.imshow(self._data, cmap="gray")
+            ax.set_title(self.__class__.__name__)
+        else:
+            # 一维曲线
+            y = self._data[0, :] if self._data.ndim > 1 else self._data
+            ax.plot(y)
+            ax.set_title(self.__class__.__name__)
+            ax.grid(True)
+
+        return ax
 
     def save_image(self, path: str) -> None:
         """保存为图片文件"""

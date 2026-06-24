@@ -39,3 +39,17 @@ class GaussianBeam(BaseGenerator):
             amplitude=amplitude,
             center=center,
         )
+
+    def plot(self, ax=None, **kwargs):
+        """热力图"""
+        import matplotlib.pyplot as plt
+
+        if self._data is None:
+            raise ValueError("请先调用 generate()")
+
+        if ax is None:
+            _, ax = plt.subplots(figsize=(6, 5))
+
+        ax.imshow(self._data, cmap="hot")
+        ax.set_title("GaussianBeam")
+        return ax

@@ -50,6 +50,24 @@ class FunctionCurve(BaseGenerator):
             y_shape=y_shape,
         )
 
+    def plot(self, ax=None, **kwargs):
+        """曲线图"""
+        import matplotlib.pyplot as plt
+
+        if self._data is None:
+            raise ValueError("请先调用 generate()")
+
+        if ax is None:
+            _, ax = plt.subplots(figsize=(8, 4))
+
+        y = self._data[0, :]
+        x = np.linspace(self._params.get("x_range", (0, 2*np.pi))[0],
+                       self._params.get("x_range", (0, 2*np.pi))[1], len(y))
+        ax.plot(x, y)
+        ax.set_title("FunctionCurve")
+        ax.grid(True)
+        return ax
+
     @classmethod
     def from_config(cls, config: dict | str) -> "FunctionCurve":
         """从配置创建，支持字符串函数名"""
