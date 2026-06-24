@@ -7,6 +7,13 @@ from ..base import BaseGenerator
 class CoshCurve(BaseGenerator):
     """双曲余弦 (cosh) 生成器"""
 
+    CONFIG_KEYS = {
+        "x_range": ("x_range", tuple),
+        "num_points": ("num_points", int),
+        "amplitude": ("amplitude", float),
+        "y_shape": ("y_shape", int),
+    }
+
     def __init__(
         self,
         x_range: tuple[float, float] = (-2, 2),

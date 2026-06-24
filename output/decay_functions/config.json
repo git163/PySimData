@@ -1,0 +1,13 @@
+{
+  "type": "ExponentialDecay",
+  "format": "npy",
+  "params": {
+    "shape": [
+      128,
+      128
+    ],
+    "tau": 10.0,
+    "amplitude": 255.0,
+    "direction": "x"
+  }
+}

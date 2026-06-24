@@ -7,6 +7,13 @@ from ..base import BaseGenerator
 class GaussianBeam(BaseGenerator):
     """高斯束斑生成器"""
 
+    CONFIG_KEYS = {
+        "shape": ("shape", tuple),
+        "sigma": ("sigma", float),
+        "amplitude": ("amplitude", float),
+        "center": ("center", tuple),
+    }
+
     def __init__(
         self,
         shape: tuple[int, int] = (256, 256),

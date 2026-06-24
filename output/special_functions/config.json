@@ -1,0 +1,13 @@
+{
+  "type": "ErfCurve",
+  "format": "npy",
+  "params": {
+    "x_range": [
+      -3,
+      3
+    ],
+    "num_points": 100,
+    "amplitude": 1.0,
+    "y_shape": 100
+  }
+}

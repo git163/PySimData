@@ -7,6 +7,14 @@ from ..base import BaseGenerator
 class GaussianGrid(BaseGenerator):
     """高斯点阵生成器"""
 
+    CONFIG_KEYS = {
+        "shape": ("shape", tuple),
+        "mean": ("mean", float),
+        "std": ("std", float),
+        "num_points": ("num_points", int),
+        "seed": ("seed", int),
+    }
+
     def __init__(
         self,
         shape: tuple[int, int] = (256, 256),

@@ -7,6 +7,13 @@ from ..base import BaseGenerator
 class ExponentialDecay(BaseGenerator):
     """单边指数衰减生成器"""
 
+    CONFIG_KEYS = {
+        "shape": ("shape", tuple),
+        "tau": ("tau", float),
+        "amplitude": ("amplitude", float),
+        "direction": ("direction", str),
+    }
+
     def __init__(
         self,
         shape: tuple[int, int] = (256, 256),
@@ -23,7 +30,7 @@ class ExponentialDecay(BaseGenerator):
             else:
                 y = np.arange(shape[0])
                 x = amplitude * np.exp(-y / tau)
-                return np.tile(x, (1, shape[1]))
+                return np.tile(x, (shape[0], 1))
 
         super().__init__(
             func=_func,
