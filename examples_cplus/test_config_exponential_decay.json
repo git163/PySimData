@@ -1,0 +1,10 @@
+{
+  "type": "ExponentialDecay",
+  "format": "csv",
+  "params": {
+    "shape": [64, 64],
+    "tau": 15.0,
+    "amplitude": 200.0,
+    "direction": "y"
+  }
+}

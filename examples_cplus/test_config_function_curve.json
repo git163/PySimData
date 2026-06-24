@@ -1,0 +1,11 @@
+{
+  "type": "FunctionCurve",
+  "format": "csv",
+  "params": {
+    "func": "cos",
+    "x_range": [0, 6.283185307179586],
+    "num_points": 50,
+    "amplitude": 2.0,
+    "y_shape": 30
+  }
+}

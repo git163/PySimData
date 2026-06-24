@@ -1,0 +1,11 @@
+{
+  "type": "GaussianGrid",
+  "format": "csv",
+  "params": {
+    "shape": [64, 64],
+    "mean": 0,
+    "std": 1,
+    "num_points": 4,
+    "seed": 42
+  }
+}

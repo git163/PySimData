@@ -1,0 +1,10 @@
+{
+  "type": "BilateralGaussian",
+  "format": "csv",
+  "params": {
+    "shape": [64, 64],
+    "sigma": 8.0,
+    "amplitude": 200.0,
+    "center": [32, 32]
+  }
+}
