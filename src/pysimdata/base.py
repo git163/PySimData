@@ -111,11 +111,83 @@ class BaseGenerator:
 
         return config
 
-    def save_config(self, path: str) -> None:
+    def save_config(self, path: str, enable_timestamp: bool = False) -> None:
         """保存配置到 JSON 文件"""
         config = self.to_config()
+
+        if enable_timestamp:
+            from datetime import datetime
+            config["timestamp"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+            # 自动创建带时间戳的目录
+            import os
+            dir_path = os.path.dirname(path)
+            base_name = os.path.splitext(os.path.basename(path))[0]
+            ext = os.path.splitext(path)[1]
+            ts_dir = f"{dir_path}/{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+            os.makedirs(ts_dir, exist_ok=True)
+            path = f"{ts_dir}/{base_name}{ext}"
+
         with open(path, "w", encoding="utf-8") as f:
             json.dump(config, f, indent=2, ensure_ascii=False)
+
+    def save(
+        self,
+        output_dir: str,
+        name: str = "data",
+        enable_timestamp: bool = True,
+    ) -> None:
+        """
+        保存数据、配置和可视化到指定目录
+
+        Args:
+            output_dir: 输出目录 (如 "output/gaussian_grid")
+            name: 文件名前缀
+            enable_timestamp: 是否创建时间戳子目录
+        """
+        import os
+
+        # 时间戳目录
+        if enable_timestamp:
+            from datetime import datetime
+            ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+            output_dir = f"{output_dir}/{ts}"
+
+        os.makedirs(output_dir, exist_ok=True)
+
+        # 保存数据
+        if self._data is not None:
+            np.save(f"{output_dir}/{name}.npy", self._data)
+
+        # 保存配置
+        self.save_config(f"{output_dir}/config.json", enable_timestamp=False)
+
+        # 保存图片
+        try:
+            import matplotlib.pyplot as plt
+
+            plt.figure(figsize=(6, 5))
+
+            # 判断是一维曲线还是二维图像
+            if self._data is not None and self._data.ndim == 2 and self._data.shape[0] > 1:
+                # 二维图像
+                plt.imshow(self._data, cmap="gray")
+                plt.colorbar()
+            else:
+                # 一维曲线
+                y = self._data[0, :] if self._data.ndim > 1 else self._data
+                x = np.arange(len(y))
+                plt.plot(x, y)
+                plt.grid(True)
+
+            plt.title(name)
+            plt.tight_layout()
+            plt.savefig(f"{output_dir}/preview.png", dpi=150)
+            plt.close()
+        except ImportError:
+            pass
+
+        return output_dir
 
     def generate(self) -> np.ndarray:
         """生成仿真数据"""
@@ -157,13 +229,27 @@ class BaseGenerator:
         plt.colorbar()
         plt.show()
 
-    def save(self, path: str, **kwargs) -> None:
+    def save_image(self, path: str) -> None:
         """保存为图片文件"""
-        from PIL import Image
+        import matplotlib.pyplot as plt
+
         if self._data is None:
             raise ValueError("请先调用 generate()")
-        data = np.clip(self._data, 0, 255).astype(np.uint8)
-        Image.fromarray(data).save(path, **kwargs)
+
+        plt.figure(figsize=(6, 5))
+
+        # 二维图像用 imshow，一维用 plot
+        if self._data.ndim == 2 and self._data.shape[0] > 1:
+            plt.imshow(self._data, cmap="gray")
+            plt.colorbar()
+        else:
+            y = self._data[0, :] if self._data.ndim > 1 else self._data
+            plt.plot(y)
+            plt.grid(True)
+
+        plt.tight_layout()
+        plt.savefig(path, dpi=150)
+        plt.close()
 
     @property
     def data(self) -> np.ndarray:

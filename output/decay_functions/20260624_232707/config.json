@@ -6,8 +6,8 @@
       128,
       128
     ],
-    "tau": 10.0,
-    "amplitude": 255.0,
+    "tau": 10,
+    "amplitude": 255,
     "direction": "x"
   }
 }
