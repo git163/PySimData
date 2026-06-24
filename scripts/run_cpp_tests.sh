@@ -44,8 +44,13 @@ echo "[3/3] 运行 C++ 示例..."
 cd "$ROOT_DIR"
 for example in "$BUILD_DIR"/examples_cplus/[0-9][0-9]_*; do
     if [ -x "$example" ]; then
-        echo "  Running $(basename "$example")..."
-        "$example"
+        name=$(basename "$example")
+        echo "  Running $name..."
+        if [ "$name" = "09_from_config" ]; then
+            "$example" "$ROOT_DIR/examples_cplus/test_config_gaussian_beam.json" "$ROOT_DIR/output/from_config"
+        else
+            "$example"
+        fi
     fi
 done
 

@@ -30,7 +30,7 @@ class ExponentialDecay(BaseGenerator):
             else:
                 y = np.arange(shape[0])
                 x = amplitude * np.exp(-y / tau)
-                return np.tile(x, (shape[0], 1))
+                return np.tile(x.reshape(-1, 1), (1, shape[1]))
 
         super().__init__(
             func=_func,

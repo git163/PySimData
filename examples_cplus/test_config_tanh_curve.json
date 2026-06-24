@@ -1,0 +1,10 @@
+{
+  "type": "TanhCurve",
+  "format": "csv",
+  "params": {
+    "x_range": [-3, 3],
+    "num_points": 50,
+    "amplitude": 1.0,
+    "y_shape": 20
+  }
+}
