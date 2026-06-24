@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from pysimdata.gaussian import GaussianGrid
+from pysimdata.function import GaussianGrid
 
 
 def test_gaussian_grid_default():
@@ -26,7 +26,7 @@ def test_gaussian_grid_data_property():
 
 def test_gaussian_beam_default():
     """默认参数生成"""
-    from pysimdata.gaussian import GaussianBeam
+    from pysimdata.function import GaussianBeam
 
     gen = GaussianBeam()
     data = gen.generate()
@@ -37,7 +37,7 @@ def test_gaussian_beam_default():
 
 def test_gaussian_beam_custom():
     """自定义参数"""
-    from pysimdata.gaussian import GaussianBeam
+    from pysimdata.function import GaussianBeam
 
     gen = GaussianBeam(shape=(128, 128), sigma=10, amplitude=200, center=(64, 64))
     data = gen.generate()
