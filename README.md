@@ -68,7 +68,13 @@ cmake --build build -j
 # ...
 ```
 
-### Run tests
+### Run all C++ tests and examples
+
+```bash
+bash scripts/run_cpp_tests.sh
+```
+
+### Manual build & test
 
 ```bash
 cd build && ctest --output-on-failure
