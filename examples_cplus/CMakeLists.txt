@@ -21,3 +21,6 @@ target_link_libraries(07_exponential_decay PRIVATE pysimdata_cplus)
 
 add_executable(08_bilateral_gaussian 08_bilateral_gaussian.cpp)
 target_link_libraries(08_bilateral_gaussian PRIVATE pysimdata_cplus)
+
+add_executable(09_from_config 09_from_config.cpp)
+target_link_libraries(09_from_config PRIVATE pysimdata_cplus)

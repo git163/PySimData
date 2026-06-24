@@ -93,6 +93,21 @@ int main() {
 }
 ```
 
+### Verify consistency between Python and C++
+
+Use the same `config.json` to generate data from both implementations and compare:
+
+```bash
+# Build C++ first
+cmake -B build -S . -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j
+
+# Run comparison
+.venv/bin/python scripts/compare_with_python.py examples_cplus/test_config_gaussian_beam.json --tol 1e-10
+```
+
+For `GaussianGrid`, the script only checks shape/size because C++ and numpy use different random number generators.
+
 ## Project layout
 
 - `docs/` — 设计文档与计划

@@ -1,0 +1,10 @@
+{
+  "type": "ErfCurve",
+  "format": "csv",
+  "params": {
+    "x_range": [-3, 3],
+    "num_points": 50,
+    "amplitude": 1.5,
+    "y_shape": 20
+  }
+}

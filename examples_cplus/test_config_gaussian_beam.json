@@ -1,0 +1,10 @@
+{
+  "type": "GaussianBeam",
+  "format": "csv",
+  "params": {
+    "shape": [64, 64],
+    "sigma": 5.0,
+    "amplitude": 255.0,
+    "center": [32, 32]
+  }
+}
