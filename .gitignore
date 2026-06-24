@@ -32,6 +32,9 @@ compile_commands.json
 *.dylib
 *.exe
 
+# C++ dependencies (fetched by scripts/fetch_deps.sh)
+third_party/
+
 # Coverage
 *.gcov
 *.info

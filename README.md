@@ -1,14 +1,15 @@
 # pysimdata
 
-Python simulation data processing project.
+Python simulation data processing project with an optional C++ implementation.
 
-## Requirements
+## Python (original)
+
+### Requirements
 
 - Python ≥ 3.9
 - `venv` (built into Python 3.3+)
-- Optional but recommended: VSCode + the recommended extensions for the best experience.
 
-## Setup
+### Setup
 
 ```bash
 python3 -m venv .venv
@@ -17,9 +18,7 @@ pip install --upgrade pip setuptools wheel
 pip install -e ".[dev]"
 ```
 
-This installs the package in editable mode along with dev dependencies (pytest, pytest-cov, ruff).
-
-## Run
+### Run
 
 ```bash
 python -m pysimdata
@@ -27,45 +26,79 @@ python -m pysimdata
 python -c "import pysimdata; print(pysimdata.__version__)"
 ```
 
-## Test
+### Test
 
 ```bash
 pytest
 ```
 
-Test files go under `tests/<module_name>/test_<...>.py` — pytest auto-discovers them via the `testpaths` setting in `pyproject.toml`.
-
-## Lint / format
+### Lint / format
 
 ```bash
-ruff check .        # lint
-ruff format .      # format
+ruff check .
+ruff format .
 ```
 
-## Debug
+## C++ (`pysimdata_cplus`)
 
-Open the folder in VSCode (`code .`). The project ships launch configurations (`.vscode/launch.json`):
+位于 `src/pysimdata_cplus/`，与 Python 代码共存，互不干扰。
 
-- **Python: Current File** — debug the file currently open in the editor.
-- **Python: Module pysimdata** — debug the package as a module (entry point).
-- **Python: pytest** — debug all tests.
-- **Python: pytest current file** — debug the test file currently open.
+### Requirements
 
-`settings.json` points VSCode at `.venv/bin/python`, so IntelliSense, breakpoints, and the test explorer all use the correct interpreter. Ruff is set as the default formatter, with format-on-save enabled.
+- CMake ≥ 3.16
+- C++17 compiler
+- OpenCV 4.x（用于离线图像加载）
 
-If you don't use VSCode, attach from the command line:
+### Setup
 
 ```bash
-python -m pdb -m pysimdata
-# or
-pytest --pdb                  # drops into pdb on first failure
+# 拉取 Eigen、nlohmann/json、GoogleTest
+bash scripts/fetch_deps.sh
+
+# 构建
+cmake -B build -S . -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j
+```
+
+### Run examples
+
+```bash
+./build/examples_cplus/01_gaussian_grid
+./build/examples_cplus/02_gaussian_beam
+# ...
+```
+
+### Run tests
+
+```bash
+cd build && ctest --output-on-failure
+```
+
+### C++ API usage
+
+```cpp
+#include "pysimdata_cplus/pysimdata_cplus.h"
+
+int main() {
+    pysimdata_cplus::GaussianBeam gen(256, 256, 5.0, 255.0);
+    gen.generate();
+    gen.save("output", "data", false);  // 生成 data.csv + config.json
+    return 0;
+}
 ```
 
 ## Project layout
 
-- `docs/` — design docs and plans (use `docs/plan-template.md`)
-- `src/pysimdata/` — package source
-- `tests/` — pytest tests, organized by module
+- `docs/` — 设计文档与计划
+- `src/pysimdata/` — Python 包源码（保留）
+- `src/pysimdata_cplus/` — C++ 库源码
+- `include/pysimdata_cplus/` — C++ 对外头文件
+- `tests/pysimdata/` — Python 测试（保留）
+- `tests_pysimdata_cplus/` — C++ 测试
+- `examples/` — Python 示例（保留）
+- `examples_cplus/` — C++ 示例
+- `scripts/fetch_deps.sh` — C++ 依赖拉取脚本
+- `third_party/` — C++ 第三方依赖
 
 ## Conventions
 

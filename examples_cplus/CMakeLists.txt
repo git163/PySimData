@@ -1,0 +1,23 @@
+add_executable(01_gaussian_grid 01_gaussian_grid.cpp)
+target_link_libraries(01_gaussian_grid PRIVATE pysimdata_cplus)
+
+add_executable(02_gaussian_beam 02_gaussian_beam.cpp)
+target_link_libraries(02_gaussian_beam PRIVATE pysimdata_cplus)
+
+add_executable(03_function_curve 03_function_curve.cpp)
+target_link_libraries(03_function_curve PRIVATE pysimdata_cplus)
+
+add_executable(04_erf_curve 04_erf_curve.cpp)
+target_link_libraries(04_erf_curve PRIVATE pysimdata_cplus)
+
+add_executable(05_tanh_curve 05_tanh_curve.cpp)
+target_link_libraries(05_tanh_curve PRIVATE pysimdata_cplus)
+
+add_executable(06_cosh_curve 06_cosh_curve.cpp)
+target_link_libraries(06_cosh_curve PRIVATE pysimdata_cplus)
+
+add_executable(07_exponential_decay 07_exponential_decay.cpp)
+target_link_libraries(07_exponential_decay PRIVATE pysimdata_cplus)
+
+add_executable(08_bilateral_gaussian 08_bilateral_gaussian.cpp)
+target_link_libraries(08_bilateral_gaussian PRIVATE pysimdata_cplus)
