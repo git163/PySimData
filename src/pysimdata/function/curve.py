@@ -1,0 +1,31 @@
+"""基础函数曲线生成器"""
+import numpy as np
+
+from ..base import BaseGenerator
+
+
+class FunctionCurve(BaseGenerator):
+    """基础函数曲线生成器 (sin, cos 等)"""
+
+    def __init__(
+        self,
+        func: callable = np.sin,
+        x_range: tuple[float, float] = (0, 2 * np.pi),
+        num_points: int = 100,
+        amplitude: float = 1.0,
+        y_shape: int = 100,
+        data_source: dict | None = None,
+    ):
+        def _func(x_range, num_points, amplitude, y_shape):
+            x = np.linspace(x_range[0], x_range[1], num_points)
+            y = func(x) * amplitude
+            return np.tile(y, (y_shape, 1))
+
+        super().__init__(
+            func=_func,
+            data_source=data_source,
+            x_range=x_range,
+            num_points=num_points,
+            amplitude=amplitude,
+            y_shape=y_shape,
+        )
