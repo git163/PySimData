@@ -56,7 +56,7 @@ def main():
             ax.axis("off")
         plt.tight_layout()
         plt.savefig(os.path.join(output_dir, "preview.png"), dpi=150)
-        plt.show()
+        plt.close()
     except ImportError:
         print("matplotlib 未安装，跳过绘图")
 

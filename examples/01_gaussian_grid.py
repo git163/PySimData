@@ -78,7 +78,7 @@ def main():
     plt.tight_layout()
     plt.savefig(os.path.join(output_dir, "preview.png"), dpi=150)
     print(f"保存预览图到: {os.path.join(output_dir, 'preview.png')}")
-    plt.show()
+    plt.close()
 
 
 if __name__ == "__main__":

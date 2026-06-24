@@ -38,7 +38,7 @@ def main():
 
         plt.tight_layout()
         plt.savefig(os.path.join(output_dir, "preview.png"), dpi=150)
-        plt.show()
+        plt.close()
     except ImportError:
         for i, (gen, name, title) in enumerate(generators):
             data = gen.generate()
