@@ -1,4 +1,5 @@
 """pysimdata - 仿真数据生成器"""
+from .base import BaseGenerator, load
 from .function import (
     GaussianGrid,
     GaussianBeam,
@@ -11,6 +12,8 @@ from .function import (
 )
 
 __all__ = [
+    "BaseGenerator",
+    "load",
     "GaussianGrid",
     "GaussianBeam",
     "FunctionCurve",

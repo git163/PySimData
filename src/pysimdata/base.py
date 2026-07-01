@@ -355,3 +355,47 @@ class BaseGenerator:
     def params(self) -> dict:
         """返回参数字典"""
         return self._params.copy()
+
+
+def load(output_dir: str) -> BaseGenerator:
+    """
+    从 save_all 输出目录加载生成器：
+
+    - 目录含数据文件：读离线数据并按 expected_shape 校验，直接作为结果数据
+    - 目录仅含 config.json：按配置计算生成
+
+    Args:
+        output_dir: save_all 保存的目录
+
+    Returns:
+        已带数据的生成器实例
+    """
+    config_path = os.path.join(output_dir, "config.json")
+    if not os.path.exists(config_path):
+        raise FileNotFoundError(f"配置文件不存在: {config_path}")
+
+    with open(config_path, "r", encoding="utf-8") as f:
+        config = json.load(f)
+
+    cls = BaseGenerator.get_generator_class(config.get("type"))
+    gen = cls.from_config(config)
+
+    # 定位数据文件：优先 data_file 字段，回退 data.<ext>
+    fmt = config.get("format", "csv")
+    data_file = config.get("data_file") or f"data.{'npy' if fmt == 'npy' else 'csv'}"
+    data_path = os.path.join(output_dir, data_file)
+
+    if os.path.exists(data_path):
+        arr = BaseGenerator._read_array(data_path)
+        expected = gen.expected_shape()
+        if expected is not None and tuple(arr.shape) != tuple(expected):
+            raise ValueError(
+                f"数据形状不匹配: 期望 {tuple(expected)}, 实际 {tuple(arr.shape)}"
+            )
+        gen._data = arr
+        logger.debug("Loaded offline data from %s shape %s", data_path, arr.shape)
+    else:
+        gen.generate()
+        logger.debug("No data file; generated from config")
+
+    return gen
