@@ -134,11 +134,24 @@ class BaseGenerator:
         """导出配置为字典"""
         return self._build_config()
 
-    def _write_config_file(self, path: str, with_timestamp: bool = False) -> str:
-        """将配置写入 JSON 文件，可选追加时间戳字段，返回实际写入路径"""
+    def _write_config_file(
+        self,
+        path: str,
+        with_timestamp: bool = False,
+        fmt: str = "npy",
+        data_file: Optional[str] = None,
+    ) -> str:
+        """将配置写入 JSON 文件。
+
+        fmt 写入 config["format"]；data_file 非空时写入 config["data_file"]；
+        with_timestamp 为真时追加 timestamp 字段。返回实际写入路径。
+        """
         os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
 
         config = self.to_config()
+        config["format"] = fmt
+        if data_file is not None:
+            config["data_file"] = data_file
         if with_timestamp:
             config["timestamp"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -211,7 +224,8 @@ class BaseGenerator:
         self,
         output_dir: str,
         name: str = "data",
-        timestamped: bool = True,
+        timestamped: bool = False,
+        fmt: str = "csv",
     ) -> str:
         """
         一次性保存全部产物（数据 + 配置 + 预览图）到指定目录
@@ -219,7 +233,8 @@ class BaseGenerator:
         Args:
             output_dir: 输出目录 (如 "output/gaussian_grid")
             name: 数据文件名前缀
-            timestamped: 是否创建时间戳子目录
+            timestamped: 是否创建时间戳子目录（默认否）
+            fmt: 数据格式，"csv"(默认) 或 "npy"
 
         Returns:
             实际保存目录路径
@@ -229,18 +244,31 @@ class BaseGenerator:
             output_dir = os.path.join(output_dir, ts)
         os.makedirs(output_dir, exist_ok=True)
 
-        self._save_data(output_dir, name)
-        self._write_config_file(os.path.join(output_dir, "config.json"), with_timestamp=True)
+        data_file = self._save_data(output_dir, name, fmt=fmt)
+        self._write_config_file(
+            os.path.join(output_dir, "config.json"),
+            with_timestamp=True,
+            fmt=fmt,
+            data_file=data_file,
+        )
         self._save_preview(output_dir)
 
         return output_dir
 
-    def _save_data(self, output_dir: str, name: str) -> None:
-        """内部方法：保存数据数组为 .npy"""
+    def _save_data(self, output_dir: str, name: str, fmt: str = "csv") -> Optional[str]:
+        """保存数据数组；fmt=csv 用 savetxt，fmt=npy 用 save。返回数据文件名"""
         if self._data is None:
-            return
-        np.save(os.path.join(output_dir, f"{name}.npy"), self._data)
-        logger.debug("Data saved to %s/%s.npy", output_dir, name)
+            return None
+        if fmt == "csv":
+            data_file = f"{name}.csv"
+            np.savetxt(os.path.join(output_dir, data_file), self._data, delimiter=",")
+        elif fmt == "npy":
+            data_file = f"{name}.npy"
+            np.save(os.path.join(output_dir, data_file), self._data)
+        else:
+            raise ValueError(f"不支持的数据格式: {fmt}")
+        logger.debug("Data saved to %s/%s", output_dir, data_file)
+        return data_file
 
     def _save_preview(self, output_dir: str) -> None:
         """内部方法：保存预览图 preview.png（matplotlib 缺失时跳过）"""
