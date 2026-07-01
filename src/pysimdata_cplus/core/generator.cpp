@@ -5,7 +5,9 @@
 #include <cctype>
 #include <filesystem>
 #include <fstream>
+#include <functional>
 #include <iomanip>
+#include <map>
 #include <sstream>
 #include <stdexcept>
 
@@ -22,6 +24,27 @@
 
 namespace pysimdata_cplus {
 
+namespace {
+
+using Factory = std::function<std::unique_ptr<Generator>(const json&)>;
+
+// type 字符串 -> 工厂 的注册表（集中注册，保证静态库链接可靠）
+std::map<std::string, Factory>& registry() {
+    static std::map<std::string, Factory> r = {
+        {"GaussianBeam", [](const json& p) { return std::make_unique<GaussianBeam>(p); }},
+        {"GaussianGrid", [](const json& p) { return std::make_unique<GaussianGrid>(p); }},
+        {"FunctionCurve", [](const json& p) { return std::make_unique<FunctionCurve>(p); }},
+        {"ErfCurve", [](const json& p) { return std::make_unique<ErfCurve>(p); }},
+        {"TanhCurve", [](const json& p) { return std::make_unique<TanhCurve>(p); }},
+        {"CoshCurve", [](const json& p) { return std::make_unique<CoshCurve>(p); }},
+        {"ExponentialDecay", [](const json& p) { return std::make_unique<ExponentialDecay>(p); }},
+        {"BilateralGaussian", [](const json& p) { return std::make_unique<BilateralGaussian>(p); }},
+    };
+    return r;
+}
+
+}  // namespace
+
 std::unique_ptr<Generator> Generator::from_config(const json& config) {
     if (!config.contains("type")) {
         throw std::runtime_error("Config must contain 'type' field");
@@ -30,25 +53,17 @@ std::unique_ptr<Generator> Generator::from_config(const json& config) {
     std::string type = config["type"].get<std::string>();
     json params = config.value("params", json::object());
 
-    if (type == "GaussianBeam") {
-        return std::make_unique<GaussianBeam>(params);
-    } else if (type == "GaussianGrid") {
-        return std::make_unique<GaussianGrid>(params);
-    } else if (type == "FunctionCurve") {
-        return std::make_unique<FunctionCurve>(params);
-    } else if (type == "ErfCurve") {
-        return std::make_unique<ErfCurve>(params);
-    } else if (type == "TanhCurve") {
-        return std::make_unique<TanhCurve>(params);
-    } else if (type == "CoshCurve") {
-        return std::make_unique<CoshCurve>(params);
-    } else if (type == "ExponentialDecay") {
-        return std::make_unique<ExponentialDecay>(params);
-    } else if (type == "BilateralGaussian") {
-        return std::make_unique<BilateralGaussian>(params);
-    } else {
-        throw std::runtime_error("Unknown generator type: " + type);
+    auto& reg = registry();
+    auto it = reg.find(type);
+    if (it == reg.end()) {
+        std::string available;
+        for (const auto& kv : reg) {
+            available += (available.empty() ? "" : ", ") + kv.first;
+        }
+        throw std::runtime_error("Unknown generator type: " + type +
+                                 "; available: " + available);
     }
+    return it->second(params);
 }
 
 std::unique_ptr<Generator> Generator::from_config_file(const std::string& path) {
