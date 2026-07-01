@@ -73,15 +73,15 @@ load() 统一入口逻辑:
 
 3. **`save_all()` 签名调整**
    ```python
-   def save_all(self, output_dir, name="data", timestamped=False, fmt="csv") -> str
+   def save_all(self, output_dir, name="data", timestamped=False, fmt=None) -> str
    ```
    - `timestamped` 默认 `False`（不再自动建时间戳子目录）。
-   - `fmt` 默认 `"csv"`，可选 `"npy"`（参数名用 `fmt` 避免遮蔽内置 `format`）；数据存为 `{name}.{ext}`（`csv`→`.csv`，`npy`→`.npy`）。
+   - `fmt` 为 `None` 时按类型自动选择：图像类（params 含 `shape`）用无损 `tiff`，其余用 `csv`；也可显式传 `"csv"/"npy"/"png"/"tiff"`（参数名用 `fmt` 避免遮蔽内置 `format`）。数据存为 `{name}.{ext}`。tiff 用 float32 无损、png 用 uint8 有损，png/tiff 仅支持 2D 数据。
    - 写入的 `config.json` 用 `format` 字段记录实际格式与数据文件名，供 `load()` 精确定位。
 
 4. **多格式数据读写（去重复用）**
    - 抽出 `_read_array(path, fmt=None) -> np.ndarray`：按扩展名/`fmt` 分派——`.csv`(`np.loadtxt`, 逗号分隔)、`.npy/.npz`(`np.load`)、图片(`PIL`)。现有 `_load_offline_data()` 的多格式逻辑复用它，避免重复。
-   - `_save_data(output_dir, name, fmt)`：`csv`→`np.savetxt(delimiter=",")`；`npy`→`np.save`。
+   - `_save_data(output_dir, name, fmt)`：`csv`→`np.savetxt(delimiter=",")`；`npy`→`np.save`；`png`→PIL uint8；`tiff`→PIL float32（`_save_image`，仅 2D）。
 
 ### 接口 / 数据结构
 
@@ -105,7 +105,7 @@ load() 统一入口逻辑:
 | `BaseGenerator.get_generator_class(type_name)` | `base.py` | 按 type 查注册表 |
 | `BaseGenerator.expected_shape()` | `base.py` | 按 params 推导期望形状，可重写 |
 | `BaseGenerator._read_array(path, fmt)` | `base.py` | 多格式读数组（私有，复用） |
-| `save_all(..., timestamped=False, fmt="csv")` | `base.py` | 时间戳默认关、新增 fmt |
+| `save_all(..., timestamped=False, fmt=None)` | `base.py` | 时间戳默认关；fmt 自动(图像 tiff/其余 csv)，支持 csv/npy/png/tiff |
 
 ## 错误处理
 

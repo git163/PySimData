@@ -225,7 +225,7 @@ class BaseGenerator:
         output_dir: str,
         name: str = "data",
         timestamped: bool = False,
-        fmt: str = "csv",
+        fmt: Optional[str] = None,
     ) -> str:
         """
         一次性保存全部产物（数据 + 配置 + 预览图）到指定目录
@@ -234,11 +234,15 @@ class BaseGenerator:
             output_dir: 输出目录 (如 "output/gaussian_grid")
             name: 数据文件名前缀
             timestamped: 是否创建时间戳子目录（默认否）
-            fmt: 数据格式，"csv"(默认) 或 "npy"
+            fmt: 数据格式 "csv"/"npy"/"png"/"tiff"；为 None 时按类型自动选择
+                （图像类用无损 tiff，其余用 csv）
 
         Returns:
             实际保存目录路径
         """
+        if fmt is None:
+            fmt = self._default_format()
+
         if timestamped:
             ts = datetime.now().strftime("%Y%m%d_%H%M%S")
             output_dir = os.path.join(output_dir, ts)
@@ -254,6 +258,12 @@ class BaseGenerator:
         self._save_preview(output_dir)
 
         return output_dir
+
+    def _default_format(self) -> str:
+        """默认数据格式：图像类(params 含 shape)用无损 tiff，其余用 csv"""
+        if self._params.get("shape") is not None:
+            return "tiff"
+        return "csv"
 
     def _save_data(self, output_dir: str, name: str, fmt: str = "csv") -> Optional[str]:
         """保存数据数组。

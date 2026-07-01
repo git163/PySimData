@@ -41,13 +41,39 @@ def test_read_array_unsupported():
             BaseGenerator._read_array(p)
 
 
-def test_save_all_csv_default_no_timestamp():
-    """默认 fmt=csv、timestamped=False：直接存目标目录，产出 data.csv"""
+def test_save_all_csv_explicit_no_timestamp():
+    """显式 fmt=csv、timestamped=False：直接存目标目录，产出 data.csv"""
+    gen = GaussianGrid(shape=(32, 32), num_points=4, seed=1)
+    gen.generate()
+    with tempfile.TemporaryDirectory() as d:
+        out = gen.save_all(os.path.join(d, "grid"), fmt="csv")
+        assert out == os.path.join(d, "grid")  # 未建时间戳子目录
+        assert os.path.exists(os.path.join(out, "data.csv"))
+        with open(os.path.join(out, "config.json")) as f:
+            cfg = json.load(f)
+        assert cfg["format"] == "csv"
+        assert cfg["data_file"] == "data.csv"
+
+
+def test_save_all_image_defaults_to_tiff():
+    """图像类(params 含 shape) save_all 默认存无损 tiff"""
     gen = GaussianGrid(shape=(32, 32), num_points=4, seed=1)
     gen.generate()
     with tempfile.TemporaryDirectory() as d:
         out = gen.save_all(os.path.join(d, "grid"))
-        assert out == os.path.join(d, "grid")  # 未建时间戳子目录
+        assert os.path.exists(os.path.join(out, "data.tiff"))
+        with open(os.path.join(out, "config.json")) as f:
+            cfg = json.load(f)
+        assert cfg["format"] == "tiff"
+        assert cfg["data_file"] == "data.tiff"
+
+
+def test_save_all_curve_defaults_to_csv():
+    """曲线类(无 shape) save_all 默认存 csv"""
+    gen = FunctionCurve()
+    gen.generate()
+    with tempfile.TemporaryDirectory() as d:
+        out = gen.save_all(os.path.join(d, "fc"))
         assert os.path.exists(os.path.join(out, "data.csv"))
         with open(os.path.join(out, "config.json")) as f:
             cfg = json.load(f)
@@ -85,11 +111,11 @@ def _write_config_only(d, cfg):
 
 
 def test_load_roundtrip_csv():
-    """save_all(csv) -> load 数据与 params 一致"""
+    """save_all(fmt='csv') -> load 数据与 params 一致"""
     gen = GaussianGrid(shape=(32, 32), num_points=4, seed=7)
     gen.generate()
     with tempfile.TemporaryDirectory() as d:
-        out = gen.save_all(os.path.join(d, "g"))
+        out = gen.save_all(os.path.join(d, "g"), fmt="csv")
         loaded = load_dir(out)
     assert loaded.params["shape"] == (32, 32)
     np.testing.assert_array_almost_equal(loaded.data, gen.data)
@@ -145,7 +171,7 @@ def test_load_uses_file_data_not_regenerate():
     gen = GaussianGrid(shape=(16, 16), num_points=4, seed=3)
     gen.generate()
     with tempfile.TemporaryDirectory() as d:
-        out = gen.save_all(os.path.join(d, "g"))
+        out = gen.save_all(os.path.join(d, "g"), fmt="csv")
         # 篡改数据文件为可识别常量（与配置同形状），确认 load 读的是文件内容
         marker = np.full((16, 16), 7.0)
         np.savetxt(os.path.join(out, "data.csv"), marker, delimiter=",")
