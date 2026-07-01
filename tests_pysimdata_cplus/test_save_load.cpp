@@ -85,3 +85,63 @@ TEST(SaveAll, NpyRejected) {
     EXPECT_THROW(g.save_all("output/test_saveall_npy", "data", false, "npy"),
                  std::runtime_error);
 }
+
+// ---- B3: load(dir) ----
+
+TEST(Load, RoundtripCsv) {
+    ErfCurve g(-3.0, 3.0, 100, 1.0, 50);  // 曲线类 → 默认 csv
+    Eigen::MatrixXd orig = g.generate();
+    const std::string dir = "output/test_load_csv";
+    std::filesystem::remove_all(dir);
+    g.save_all(dir);
+    auto loaded = Generator::load(dir);
+    EXPECT_EQ(loaded->data().rows(), orig.rows());
+    EXPECT_EQ(loaded->data().cols(), orig.cols());
+    EXPECT_LT((loaded->data() - orig).cwiseAbs().maxCoeff(), 1e-9);
+}
+
+TEST(Load, RoundtripTiff) {
+    GaussianGrid g(32, 32, 0.0, 1.0, 4, 7);  // 图像类 → 默认 tiff
+    Eigen::MatrixXd orig = g.generate();
+    const std::string dir = "output/test_load_tiff";
+    std::filesystem::remove_all(dir);
+    g.save_all(dir);
+    auto loaded = Generator::load(dir);
+    EXPECT_EQ(loaded->data().rows(), 32);
+    EXPECT_EQ(loaded->data().cols(), 32);
+    EXPECT_LT((loaded->data() - orig).cwiseAbs().maxCoeff(), 1e-3);  // float32 容差
+}
+
+TEST(Load, ConfigOnlyGenerates) {
+    const std::string dir = "output/test_load_configonly";
+    std::filesystem::remove_all(dir);
+    std::filesystem::create_directories(dir);
+    GaussianGrid g(32, 32, 0.0, 1.0, 4, 7);
+    g.save_config(dir + "/config.json");  // 只写 config，无数据文件
+    auto loaded = Generator::load(dir);
+    EXPECT_EQ(loaded->data().rows(), 32);
+    EXPECT_EQ(loaded->data().cols(), 32);
+}
+
+TEST(Load, ShapeMismatchThrows) {
+    const std::string dir = "output/test_load_mismatch";
+    std::filesystem::remove_all(dir);
+    std::filesystem::create_directories(dir);
+    json cfg = {
+        {"type", "GaussianGrid"},
+        {"format", "csv"},
+        {"data_file", "data.csv"},
+        {"params", {{"shape", {32, 32}}, {"num_points", 4}}}
+    };
+    std::ofstream(dir + "/config.json") << cfg.dump(2);
+    Eigen::MatrixXd wrong = Eigen::MatrixXd::Zero(16, 16);  // 形状不符
+    WriteCsv(dir + "/data.csv", wrong);
+    EXPECT_THROW(Generator::load(dir), std::runtime_error);
+}
+
+TEST(Load, MissingConfigThrows) {
+    const std::string dir = "output/test_load_noconfig";
+    std::filesystem::remove_all(dir);
+    std::filesystem::create_directories(dir);
+    EXPECT_THROW(Generator::load(dir), std::runtime_error);
+}

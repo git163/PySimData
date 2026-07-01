@@ -28,6 +28,9 @@ class Generator {
     static std::unique_ptr<Generator> from_config(const json& config);
     static std::unique_ptr<Generator> from_config_file(const std::string& path);
 
+    // 从 save_all 输出目录整体加载：有数据文件→读+expected_shape 校验；无数据→generate
+    static std::unique_ptr<Generator> load(const std::string& dir);
+
     // 保存数据与配置到目录
     std::string save(const std::string& output_dir,
                      const std::string& name = "data",

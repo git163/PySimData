@@ -55,6 +55,57 @@ std::unique_ptr<Generator> Generator::from_config_file(const std::string& path) 
     return from_config(LoadConfigFile(path));
 }
 
+std::unique_ptr<Generator> Generator::load(const std::string& dir) {
+    std::string config_path = dir + "/config.json";
+    if (!std::filesystem::exists(config_path)) {
+        throw std::runtime_error("配置文件不存在: " + config_path);
+    }
+    json config = LoadConfigFile(config_path);
+    auto gen = from_config(config);
+
+    // 定位数据文件：优先 data_file 字段，否则回退 data.<ext>
+    std::string fmt = config.value("format", std::string("csv"));
+    std::string data_file = config.value("data_file", std::string(""));
+    if (data_file.empty()) {
+        std::string ext = "csv";
+        if (fmt == "npy") ext = "npy";
+        else if (fmt == "png") ext = "png";
+        else if (fmt == "tiff" || fmt == "tif") ext = "tiff";
+        data_file = "data." + ext;
+    }
+    std::string data_path = dir + "/" + data_file;
+
+    if (std::filesystem::exists(data_path)) {
+        std::string ext = std::filesystem::path(data_path).extension().string();
+        std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+
+        Eigen::MatrixXd arr;
+        if (ext == ".csv") {
+            arr = ReadCsv(data_path);
+        } else if (ext == ".png" || ext == ".tif" || ext == ".tiff" ||
+                   ext == ".jpg" || ext == ".jpeg" || ext == ".bmp") {
+            arr = LoadImage(data_path);
+        } else if (ext == ".npy") {
+            throw std::runtime_error("C++ 端不支持 npy 格式: " + data_path);
+        } else {
+            throw std::runtime_error("不支持的数据文件格式: " + ext);
+        }
+
+        auto shape = gen->expected_shape();
+        if (shape.first >= 0 &&
+            (arr.rows() != shape.first || arr.cols() != shape.second)) {
+            throw std::runtime_error(
+                "数据形状不匹配: 期望 (" + std::to_string(shape.first) + ", " +
+                std::to_string(shape.second) + "), 实际 (" +
+                std::to_string(arr.rows()) + ", " + std::to_string(arr.cols()) + ")");
+        }
+        gen->data_ = arr;
+    } else {
+        gen->generate();
+    }
+    return gen;
+}
+
 Eigen::MatrixXd Generator::generate() {
     if (!data_source_.is_null() && !data_source_.empty()) {
         std::string path = data_source_.value("path", "");
