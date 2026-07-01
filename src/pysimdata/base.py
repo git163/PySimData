@@ -16,6 +16,24 @@ class BaseGenerator:
     # 配置参数映射: json_key -> (param_name, type)
     CONFIG_KEYS: Dict[str, Tuple[str, type]] = {}
 
+    # type 字符串 -> 生成器类 的自动注册表
+    _REGISTRY: Dict[str, type] = {}
+
+    def __init_subclass__(cls, **kwargs):
+        """子类定义时自动登记到注册表（键为类名）"""
+        super().__init_subclass__(**kwargs)
+        BaseGenerator._REGISTRY[cls.__name__] = cls
+
+    @classmethod
+    def get_generator_class(cls, type_name: str) -> type:
+        """按 type 字符串查注册表，未注册则抛异常"""
+        if type_name not in BaseGenerator._REGISTRY:
+            available = ", ".join(sorted(BaseGenerator._REGISTRY)) or "(空)"
+            raise ValueError(
+                f"未注册的生成器类型: {type_name}; 可用类型: {available}"
+            )
+        return BaseGenerator._REGISTRY[type_name]
+
     def __init__(
         self,
         func: Optional[Callable[..., np.ndarray]] = None,
