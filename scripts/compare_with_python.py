@@ -32,12 +32,16 @@ def generate_python(config_path: str, output_dir: str) -> str:
 
 
 def generate_cpp(config_path: str, output_dir: str, build_dir: str = "build") -> str:
-    """调用 C++ 程序读取配置并生成 .csv，返回文件路径。"""
+    """调用 C++ 程序读取配置并生成数据，返回数据文件路径。
+
+    C++ save_all 默认按类型选格式（图像 tiff/曲线 csv），但对比需要高精度，
+    故显式要求 C++ 以 csv 输出（float 17 位），与 Python 精确对比。
+    """
     exe = os.path.join(build_dir, "examples_cplus", "09_from_config")
     if not os.path.exists(exe):
         raise FileNotFoundError(f"C++ executable not found: {exe}")
 
-    subprocess.run([exe, config_path, output_dir], check=True)
+    subprocess.run([exe, config_path, output_dir, "csv"], check=True)
     return os.path.join(output_dir, "data.csv")
 
 
