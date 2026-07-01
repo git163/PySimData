@@ -2,7 +2,7 @@
 
 - 日期: 2026-07-01
 - 作者: git163
-- 状态: 评审中
+- 状态: 已实施
 - 关联: src/pysimdata/base.py, src/pysimdata/__init__.py, src/pysimdata/function/*, scripts/compare_with_python.py
 
 ## 背景
