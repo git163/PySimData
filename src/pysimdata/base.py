@@ -256,7 +256,11 @@ class BaseGenerator:
         return output_dir
 
     def _save_data(self, output_dir: str, name: str, fmt: str = "csv") -> Optional[str]:
-        """保存数据数组；fmt=csv 用 savetxt，fmt=npy 用 save。返回数据文件名"""
+        """保存数据数组。
+
+        fmt: csv(savetxt) / npy(save) / png(uint8 有损) / tiff(float32 无损)。
+        png、tiff 仅支持 2D 数据。返回数据文件名。
+        """
         if self._data is None:
             return None
         if fmt == "csv":
@@ -265,9 +269,29 @@ class BaseGenerator:
         elif fmt == "npy":
             data_file = f"{name}.npy"
             np.save(os.path.join(output_dir, data_file), self._data)
+        elif fmt in ("png", "tiff", "tif"):
+            data_file = self._save_image(output_dir, name, fmt)
         else:
             raise ValueError(f"不支持的数据格式: {fmt}")
         logger.debug("Data saved to %s/%s", output_dir, data_file)
+        return data_file
+
+    def _save_image(self, output_dir: str, name: str, fmt: str) -> str:
+        """将 2D 数据保存为原始图片：tiff 用 float32 无损，png 用 uint8 有损"""
+        from PIL import Image
+
+        if self._data.ndim != 2:
+            raise ValueError(f"图片格式仅支持 2D 数据, 实际维度: {self._data.ndim}")
+
+        ext = "tiff" if fmt in ("tiff", "tif") else "png"
+        data_file = f"{name}.{ext}"
+        path = os.path.join(output_dir, data_file)
+        if ext == "tiff":
+            # float32 无损，适合精确仿真数据
+            Image.fromarray(self._data.astype(np.float32)).save(path)
+        else:
+            # png 仅 uint8，适合 0-255 图像数据（超出范围会截断）
+            Image.fromarray(self._data.astype(np.uint8)).save(path)
         return data_file
 
     def _save_preview(self, output_dir: str) -> None:
