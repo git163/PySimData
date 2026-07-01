@@ -172,6 +172,22 @@ class BaseGenerator:
             raise
         return self._data
 
+    @staticmethod
+    def _read_array(path: str, delimiter: str = ",") -> np.ndarray:
+        """按扩展名读取数组：csv / npy / npz / 常见图片格式"""
+        if not os.path.exists(path):
+            raise FileNotFoundError(f"数据文件不存在: {path}")
+        ext = os.path.splitext(path)[-1].lower()
+        if ext in (".npy", ".npz"):
+            return np.load(path)
+        if ext == ".csv":
+            return np.loadtxt(path, delimiter=delimiter)
+        if ext in (".png", ".jpg", ".jpeg", ".tif", ".tiff"):
+            from PIL import Image
+
+            return np.array(Image.open(path))
+        raise ValueError(f"不支持的文件格式: {ext}")
+
     def _load_offline_data(self) -> np.ndarray:
         """内部方法：加载离线数据并返回数组"""
         if not isinstance(self._data_source, dict):
@@ -185,22 +201,8 @@ class BaseGenerator:
         if custom_loader is not None:
             return custom_loader(path)
 
-        if not os.path.exists(path):
-            raise FileNotFoundError(f"离线数据文件不存在: {path}")
-
-        ext = os.path.splitext(path)[-1].lower()
-
-        if ext in (".npy", ".npz"):
-            return np.load(path)
-        if ext == ".csv":
-            delimiter = self._data_source.get("delimiter", ",")
-            return np.loadtxt(path, delimiter=delimiter)
-        if ext in (".png", ".jpg", ".jpeg", ".tif", ".tiff"):
-            from PIL import Image
-
-            return np.array(Image.open(path))
-
-        raise ValueError(f"不支持的文件格式: {ext}")
+        delimiter = self._data_source.get("delimiter", ",")
+        return self._read_array(path, delimiter=delimiter)
 
     # ------------------------------------------------------------------
     # 持久化：一次性保存全部产物（数据 + 配置 + 预览图）
