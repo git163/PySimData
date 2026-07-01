@@ -301,6 +301,18 @@ class BaseGenerator:
         plt.close(fig)
 
     # ------------------------------------------------------------------
+    # 形状推导（供 load 校验离线数据）
+    # ------------------------------------------------------------------
+    def expected_shape(self) -> Optional[tuple]:
+        """按 params 约定推导输出期望形状；无法推导时返回 None（跳过校验）"""
+        p = self._params
+        if p.get("shape") is not None:
+            return tuple(p["shape"])
+        if "y_shape" in p and "num_points" in p:
+            return (int(p["y_shape"]), int(p["num_points"]))
+        return None
+
+    # ------------------------------------------------------------------
     # 属性
     # ------------------------------------------------------------------
     @property
