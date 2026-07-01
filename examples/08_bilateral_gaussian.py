@@ -8,4 +8,4 @@ from pysimdata.function import BilateralGaussian
 gen = BilateralGaussian(shape=(128, 128), sigma=10, amplitude=255)
 data = gen.generate()
 print(f"BilateralGaussian: {data.shape}")
-gen.save("output/bilateral_gaussian")
+gen.save_all("output/bilateral_gaussian")

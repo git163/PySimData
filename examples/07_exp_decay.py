@@ -8,4 +8,4 @@ from pysimdata.function import ExponentialDecay
 gen = ExponentialDecay(shape=(128, 128), tau=10, amplitude=255, direction="x")
 data = gen.generate()
 print(f"ExponentialDecay: {data.shape}")
-gen.save("output/exp_decay")
+gen.save_all("output/exp_decay")

@@ -1,23 +1,26 @@
 """仿真数据生成器基类"""
 import json
+import logging
 import os
 from datetime import datetime
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable, Dict, Optional, Tuple, Union
 
 import numpy as np
+
+logger = logging.getLogger(__name__)
 
 
 class BaseGenerator:
     """仿真数据生成器基类"""
 
     # 配置参数映射: json_key -> (param_name, type)
-    CONFIG_KEYS: dict = {}
+    CONFIG_KEYS: Dict[str, Tuple[str, type]] = {}
 
     def __init__(
         self,
-        func: Optional[Callable] = None,
-        data_source: Optional[dict] = None,
-        **params: Any
+        func: Optional[Callable[..., np.ndarray]] = None,
+        data_source: Optional[Dict[str, Any]] = None,
+        **params: Any,
     ):
         """
         Args:
@@ -31,8 +34,10 @@ class BaseGenerator:
         self._data_source = data_source
         self._params = params
         self._data: Optional[np.ndarray] = None
-        self._config: Optional[dict] = None  # 原始配置
 
+    # ------------------------------------------------------------------
+    # 配置：加载
+    # ------------------------------------------------------------------
     @classmethod
     def from_config(cls, config: Union[dict, str]) -> "BaseGenerator":
         """
@@ -45,31 +50,25 @@ class BaseGenerator:
             生成器实例
         """
         if isinstance(config, str):
-            # 文件路径
-            config = cls.load_config_file(config)
+            config = cls._load_config_file(config)
 
         config_type = config.get("type")
         if config_type != cls.__name__:
             raise ValueError(f"配置类型不匹配: 期望 {cls.__name__}, 实际 {config_type}")
 
         params = config.get("params", {})
-        # 保留不在 CONFIG_KEYS 中的参数
-        extra_params = {}
-        for key in list(params.keys()):
-            if key not in cls.CONFIG_KEYS:
-                extra_params[key] = params.pop(key)
+        # 分离出不在 CONFIG_KEYS 中的额外参数（不做类型转换，原样透传）
+        known = {k: v for k, v in params.items() if k in cls.CONFIG_KEYS}
+        extra = {k: v for k, v in params.items() if k not in cls.CONFIG_KEYS}
 
-        # 类型转换
-        params = cls._convert_params(params)
+        converted = cls._convert_params(known)
+        converted.update(extra)
 
-        # 合并额外参数
-        params.update(extra_params)
-
-        return cls(**params)
+        return cls(**converted)
 
     @classmethod
-    def load_config_file(cls, path: str) -> dict:
-        """从 JSON 文件加载配置"""
+    def _load_config_file(cls, path: str) -> dict:
+        """从 JSON 文件读取配置字典（from_config 的内部步骤）"""
         with open(path, "r", encoding="utf-8") as f:
             return json.load(f)
 
@@ -91,8 +90,11 @@ class BaseGenerator:
                 converted[key] = value
         return converted
 
-    def to_config(self) -> dict:
-        """导出配置为字典"""
+    # ------------------------------------------------------------------
+    # 配置：导出
+    # ------------------------------------------------------------------
+    def _build_config(self) -> dict:
+        """构造配置骨架并填充 params（tuple/list 统一转为 list）"""
         config = {
             "type": self.__class__.__name__,
             "format": "npy",
@@ -104,105 +106,151 @@ class BaseGenerator:
 
         for param_name, value in self._params.items():
             json_key = reverse_keys.get(param_name, param_name)
-            # tuple/list 转换
             if isinstance(value, (tuple, list)):
                 value = list(value)
             config["params"][json_key] = value
 
         return config
 
-    def save_config(self, path: str, enable_timestamp: bool = False) -> None:
-        """保存配置到 JSON 文件"""
+    def to_config(self) -> dict:
+        """导出配置为字典"""
+        return self._build_config()
+
+    def _write_config_file(self, path: str, with_timestamp: bool = False) -> str:
+        """将配置写入 JSON 文件，可选追加时间戳字段，返回实际写入路径"""
+        os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+
         config = self.to_config()
-
-        if enable_timestamp:
-            from datetime import datetime
+        if with_timestamp:
             config["timestamp"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-            # 自动创建带时间戳的目录
-            import os
-            dir_path = os.path.dirname(path)
-            base_name = os.path.splitext(os.path.basename(path))[0]
-            ext = os.path.splitext(path)[1]
-            ts_dir = f"{dir_path}/{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-            os.makedirs(ts_dir, exist_ok=True)
-            path = f"{ts_dir}/{base_name}{ext}"
 
         with open(path, "w", encoding="utf-8") as f:
             json.dump(config, f, indent=2, ensure_ascii=False)
 
-    def save(
-        self,
-        output_dir: str,
-        name: str = "data",
-        enable_timestamp: bool = True,
-    ) -> None:
-        """
-        保存数据、配置和可视化到指定目录
+        logger.debug("Config saved to %s", path)
+        return path
 
-        Args:
-            output_dir: 输出目录 (如 "output/gaussian_grid")
-            name: 文件名前缀
-            enable_timestamp: 是否创建时间戳子目录
-        """
-        import os
+    def save_config(self, path: str) -> str:
+        """保存配置到 JSON 文件，返回实际写入路径"""
+        return self._write_config_file(path, with_timestamp=False)
 
-        # 时间戳目录
-        if enable_timestamp:
-            from datetime import datetime
-            ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-            output_dir = f"{output_dir}/{ts}"
-
-        os.makedirs(output_dir, exist_ok=True)
-
-        # 保存数据
-        if self._data is not None:
-            np.save(f"{output_dir}/{name}.npy", self._data)
-
-        # 保存配置
-        self.save_config(f"{output_dir}/config.json", enable_timestamp=False)
-
-        # 保存图片 - 调用子类的 plot()
-        try:
-            import matplotlib.pyplot as plt
-            fig, ax = plt.subplots(figsize=(6, 5))
-            self.plot(ax=ax)
-            fig.savefig(f"{output_dir}/preview.png", dpi=150)
-            plt.close()
-        except ImportError:
-            pass
-
-        return output_dir
-
+    # ------------------------------------------------------------------
+    # 数据生成
+    # ------------------------------------------------------------------
     def generate(self) -> np.ndarray:
         """生成仿真数据"""
-        if self._data_source is not None:
-            self._load_offline_data()
-        else:
-            self._data = self._func(**self._params)
+        try:
+            if self._data_source is not None:
+                self._data = self._load_offline_data()
+            else:
+                self._data = self._func(**self._params)
+            logger.debug(
+                "%s generated data with shape %s",
+                self.__class__.__name__,
+                getattr(self._data, "shape", "N/A"),
+            )
+        except Exception as exc:
+            logger.error("生成数据失败: %s", exc)
+            raise
         return self._data
 
-    def _load_offline_data(self) -> None:
-        """内部方法：加载离线数据"""
-        path = self._data_source.get("path")
-        custom_loader = self._data_source.get("loader")
+    def _load_offline_data(self) -> np.ndarray:
+        """内部方法：加载离线数据并返回数组"""
+        if not isinstance(self._data_source, dict):
+            raise ValueError("data_source 必须是字典")
 
+        path = self._data_source.get("path")
+        if path is None:
+            raise ValueError("data_source 中必须包含 'path' 字段")
+
+        custom_loader = self._data_source.get("loader")
         if custom_loader is not None:
-            self._data = custom_loader(path)
-            return
+            return custom_loader(path)
+
+        if not os.path.exists(path):
+            raise FileNotFoundError(f"离线数据文件不存在: {path}")
 
         ext = os.path.splitext(path)[-1].lower()
 
         if ext in (".npy", ".npz"):
-            self._data = np.load(path)
-        elif ext == ".csv":
+            return np.load(path)
+        if ext == ".csv":
             delimiter = self._data_source.get("delimiter", ",")
-            self._data = np.loadtxt(path, delimiter=delimiter)
-        elif ext in (".png", ".jpg", ".jpeg", ".tif", ".tiff"):
+            return np.loadtxt(path, delimiter=delimiter)
+        if ext in (".png", ".jpg", ".jpeg", ".tif", ".tiff"):
             from PIL import Image
-            self._data = np.array(Image.open(path))
+
+            return np.array(Image.open(path))
+
+        raise ValueError(f"不支持的文件格式: {ext}")
+
+    # ------------------------------------------------------------------
+    # 持久化：一次性保存全部产物（数据 + 配置 + 预览图）
+    # ------------------------------------------------------------------
+    def save_all(
+        self,
+        output_dir: str,
+        name: str = "data",
+        timestamped: bool = True,
+    ) -> str:
+        """
+        一次性保存全部产物（数据 + 配置 + 预览图）到指定目录
+
+        Args:
+            output_dir: 输出目录 (如 "output/gaussian_grid")
+            name: 数据文件名前缀
+            timestamped: 是否创建时间戳子目录
+
+        Returns:
+            实际保存目录路径
+        """
+        if timestamped:
+            ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+            output_dir = os.path.join(output_dir, ts)
+        os.makedirs(output_dir, exist_ok=True)
+
+        self._save_data(output_dir, name)
+        self._write_config_file(os.path.join(output_dir, "config.json"), with_timestamp=True)
+        self._save_preview(output_dir)
+
+        return output_dir
+
+    def _save_data(self, output_dir: str, name: str) -> None:
+        """内部方法：保存数据数组为 .npy"""
+        if self._data is None:
+            return
+        np.save(os.path.join(output_dir, f"{name}.npy"), self._data)
+        logger.debug("Data saved to %s/%s.npy", output_dir, name)
+
+    def _save_preview(self, output_dir: str) -> None:
+        """内部方法：保存预览图 preview.png（matplotlib 缺失时跳过）"""
+        try:
+            import matplotlib.pyplot as plt
+
+            fig, ax = plt.subplots(figsize=(6, 5))
+            self.plot(ax=ax)
+            fig.savefig(os.path.join(output_dir, "preview.png"), dpi=150)
+            plt.close(fig)
+            logger.debug("Preview saved to %s/preview.png", output_dir)
+        except ImportError:
+            logger.warning("matplotlib 未安装，跳过图片保存")
+        except Exception as exc:
+            logger.warning("图片保存失败: %s", exc)
+
+    # ------------------------------------------------------------------
+    # 可视化
+    # ------------------------------------------------------------------
+    def _render(self, ax) -> None:
+        """在给定坐标轴上渲染数据：二维用 imshow，一维用 plot"""
+        data = self.data  # 复用 property 的 None 检查
+        if data.ndim == 2 and data.shape[0] > 1:
+            ax.imshow(data, cmap="gray")
+            ax.set_title(self.__class__.__name__)
         else:
-            raise ValueError(f"不支持的文件格式: {ext}")
+            y = data[0, :] if data.ndim > 1 else data
+            ax.plot(y)
+            ax.set_title(self.__class__.__name__)
+            ax.grid(True)
 
     def plot(self, ax=None, **kwargs):
         """可视化，子类可重写"""
@@ -214,41 +262,29 @@ class BaseGenerator:
         if ax is None:
             _, ax = plt.subplots(figsize=(6, 5))
 
-        # 默认: 二维图像
-        if self._data.ndim == 2 and self._data.shape[0] > 1:
-            ax.imshow(self._data, cmap="gray")
-            ax.set_title(self.__class__.__name__)
-        else:
-            # 一维曲线
-            y = self._data[0, :] if self._data.ndim > 1 else self._data
-            ax.plot(y)
-            ax.set_title(self.__class__.__name__)
-            ax.grid(True)
-
+        self._render(ax)
         return ax
 
-    def save_image(self, path: str) -> None:
-        """保存为图片文件"""
+    def save_preview(self, path: str) -> None:
+        """保存预览图到指定路径文件"""
         import matplotlib.pyplot as plt
 
         if self._data is None:
             raise ValueError("请先调用 generate()")
 
-        plt.figure(figsize=(6, 5))
-
-        # 二维图像用 imshow，一维用 plot
+        fig, ax = plt.subplots(figsize=(6, 5))
+        self._render(ax)
+        # 二维图额外附带色标
         if self._data.ndim == 2 and self._data.shape[0] > 1:
-            plt.imshow(self._data, cmap="gray")
-            plt.colorbar()
-        else:
-            y = self._data[0, :] if self._data.ndim > 1 else self._data
-            plt.plot(y)
-            plt.grid(True)
+            fig.colorbar(ax.images[0], ax=ax)
 
-        plt.tight_layout()
-        plt.savefig(path, dpi=150)
-        plt.close()
+        fig.tight_layout()
+        fig.savefig(path, dpi=150)
+        plt.close(fig)
 
+    # ------------------------------------------------------------------
+    # 属性
+    # ------------------------------------------------------------------
     @property
     def data(self) -> np.ndarray:
         if self._data is None:

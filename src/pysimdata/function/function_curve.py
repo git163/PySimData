@@ -74,7 +74,7 @@ class FunctionCurve(BaseGenerator):
     def from_config(cls, config: Union[dict, str]) -> "FunctionCurve":
         """从配置创建，支持字符串函数名"""
         if isinstance(config, str):
-            config = cls.load_config_file(config)
+            config = cls._load_config_file(config)
 
         params = config.get("params", {})
 
@@ -92,23 +92,10 @@ class FunctionCurve(BaseGenerator):
 
     def to_config(self) -> dict:
         """导出配置为字典"""
-        config = {
-            "type": self.__class__.__name__,
-            "format": "npy",
-            "params": {},
-        }
+        # 复用基类骨架（type/format/params，含 x_range 的 tuple→list 转换）
+        config = self._build_config()
 
-        reverse_keys = {v[0]: k for k, v in self.CONFIG_KEYS.items()}
-
-        for param_name, value in self._params.items():
-            json_key = reverse_keys.get(param_name, param_name)
-
-            # func 需要特殊处理
-            if param_name == "x_range" and isinstance(value, (tuple, list)):
-                value = list(value)
-            config["params"][json_key] = value
-
-        # 添加 func
+        # func 需要特殊处理：将函数对象映射回函数名
         func_name = "sin"
         for name, fn in _FUNC_MAP.items():
             if fn == self._func_original:

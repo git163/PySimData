@@ -8,4 +8,4 @@ from pysimdata.function import CoshCurve
 gen = CoshCurve(x_range=(-2, 2), num_points=100, y_shape=50)
 data = gen.generate()
 print(f"CoshCurve: {data.shape}")
-gen.save("output/cosh_curve")
+gen.save_all("output/cosh_curve")

@@ -8,4 +8,4 @@ from pysimdata.function import GaussianBeam
 gen = GaussianBeam(shape=(256, 256), sigma=20, amplitude=255, center=(128, 128))
 data = gen.generate()
 print(f"GaussianBeam: {data.shape}")
-gen.save("output/gaussian_beam")
+gen.save_all("output/gaussian_beam")

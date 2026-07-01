@@ -8,4 +8,4 @@ from pysimdata.function import TanhCurve
 gen = TanhCurve(x_range=(-3, 3), num_points=100, y_shape=50)
 data = gen.generate()
 print(f"TanhCurve: {data.shape}")
-gen.save("output/tanh_curve")
+gen.save_all("output/tanh_curve")
