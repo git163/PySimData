@@ -110,6 +110,59 @@ void Generator::save_config(const std::string& path) const {
     file << to_config().dump(2);
 }
 
+void Generator::write_config_file(const std::string& path, const std::string& fmt,
+                                  const std::string& data_file) const {
+    json config = to_config();
+    config["format"] = fmt;  // 覆盖占位 format
+    if (!data_file.empty()) {
+        config["data_file"] = data_file;
+    }
+    std::ofstream file(path);
+    if (!file.is_open()) {
+        throw std::runtime_error("Failed to open config file for writing: " + path);
+    }
+    file << config.dump(2);
+}
+
+std::string Generator::save_all(const std::string& output_dir,
+                                const std::string& name,
+                                bool timestamped,
+                                const std::string& fmt) {
+    if (data_.size() == 0) {
+        throw std::runtime_error("Please call generate() before save_all()");
+    }
+
+    std::string actual_fmt = fmt.empty() ? default_format() : fmt;
+
+    std::string final_dir = output_dir;
+    if (timestamped) {
+        auto now = std::chrono::system_clock::now();
+        auto time = std::chrono::system_clock::to_time_t(now);
+        std::stringstream ss;
+        ss << std::put_time(std::localtime(&time), "%Y%m%d_%H%M%S");
+        final_dir = output_dir + "/" + ss.str();
+    }
+    std::filesystem::create_directories(final_dir);
+
+    std::string data_file;
+    if (actual_fmt == "csv") {
+        data_file = name + ".csv";
+        WriteCsv(final_dir + "/" + data_file, data_);
+    } else if (actual_fmt == "png") {
+        data_file = name + ".png";
+        SaveImage(final_dir + "/" + data_file, data_, "png");
+    } else if (actual_fmt == "tiff" || actual_fmt == "tif") {
+        data_file = name + ".tiff";
+        SaveImage(final_dir + "/" + data_file, data_, "tiff");
+    } else {
+        throw std::runtime_error("Unsupported data format for save_all: " + actual_fmt);
+    }
+
+    write_config_file(final_dir + "/config.json", actual_fmt, data_file);
+
+    return final_dir;
+}
+
 const Eigen::MatrixXd& Generator::data() const {
     if (data_.size() == 0) {
         throw std::runtime_error("Please call generate() before accessing data");

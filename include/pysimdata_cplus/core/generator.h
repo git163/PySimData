@@ -34,6 +34,16 @@ class Generator {
                      bool enable_timestamp = true);
     void save_config(const std::string& path) const;
 
+    // 一次性保存：按 fmt(空则 default_format) 写 data.{ext} + config(含 format/data_file)
+    // fmt 支持 csv/png/tiff；不支持 npy。timestamped 默认 false。
+    std::string save_all(const std::string& output_dir,
+                         const std::string& name = "data",
+                         bool timestamped = false,
+                         const std::string& fmt = "");
+    // 写 config.json：取 to_config() 覆盖 format、追加 data_file
+    void write_config_file(const std::string& path, const std::string& fmt,
+                           const std::string& data_file) const;
+
     const Eigen::MatrixXd& data() const;
     const json& params() const;
 
