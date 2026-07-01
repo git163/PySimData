@@ -121,4 +121,26 @@ const json& Generator::params() const {
     return params_;
 }
 
+std::string Generator::default_format() const {
+    // 图像类(params 含 shape)默认无损 tiff，其余默认 csv
+    if (params_.contains("shape")) {
+        return "tiff";
+    }
+    return "csv";
+}
+
+std::pair<int, int> Generator::expected_shape() const {
+    // 图像类：直接取 shape
+    if (params_.contains("shape") && !params_["shape"].is_null()) {
+        auto shape = ToPair<int>(params_["shape"]);
+        return {shape.first, shape.second};
+    }
+    // 曲线类：输出形状为 (y_shape, num_points)
+    if (params_.contains("y_shape") && params_.contains("num_points")) {
+        return {params_["y_shape"].get<int>(), params_["num_points"].get<int>()};
+    }
+    // 无法推导，跳过校验
+    return {-1, -1};
+}
+
 }  // namespace pysimdata_cplus

@@ -6,6 +6,7 @@ add_executable(pysimdata_cplus_tests
     test_gaussian.cpp
     test_function.cpp
     test_io.cpp
+    test_save_load.cpp
 )
 
 target_link_libraries(pysimdata_cplus_tests

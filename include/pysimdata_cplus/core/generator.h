@@ -5,6 +5,7 @@
 #include <nlohmann/json.hpp>
 #include <memory>
 #include <string>
+#include <utility>
 
 #include "pysimdata_cplus/core/config.h"
 
@@ -35,6 +36,12 @@ class Generator {
 
     const Eigen::MatrixXd& data() const;
     const json& params() const;
+
+    // 默认数据格式：图像类(params 含 shape)用无损 tiff，其余用 csv
+    std::string default_format() const;
+    // 按 params 推导期望形状：有 shape→{H,W}；有 y_shape+num_points→{y_shape,num_points}；
+    // 否则 {-1,-1}（表示跳过校验）
+    std::pair<int, int> expected_shape() const;
 
  protected:
     Eigen::MatrixXd data_;
