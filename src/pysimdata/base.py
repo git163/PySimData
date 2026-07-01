@@ -2,7 +2,7 @@
 import json
 import os
 from datetime import datetime
-from typing import Any, Callable
+from typing import Any, Callable, Optional, Union
 
 import numpy as np
 
@@ -15,8 +15,8 @@ class BaseGenerator:
 
     def __init__(
         self,
-        func: Callable | None = None,
-        data_source: dict | None = None,
+        func: Optional[Callable] = None,
+        data_source: Optional[dict] = None,
         **params: Any
     ):
         """
@@ -30,11 +30,11 @@ class BaseGenerator:
         self._func = func
         self._data_source = data_source
         self._params = params
-        self._data: np.ndarray | None = None
-        self._config: dict | None = None  # 原始配置
+        self._data: Optional[np.ndarray] = None
+        self._config: Optional[dict] = None  # 原始配置
 
     @classmethod
-    def from_config(cls, config: dict | str) -> "BaseGenerator":
+    def from_config(cls, config: Union[dict, str]) -> "BaseGenerator":
         """
         从字典或 JSON 文件加载配置并创建生成器
 

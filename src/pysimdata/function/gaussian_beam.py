@@ -1,4 +1,6 @@
 """高斯束斑生成器"""
+from typing import Optional, Tuple
+
 import numpy as np
 
 from ..base import BaseGenerator
@@ -16,11 +18,11 @@ class GaussianBeam(BaseGenerator):
 
     def __init__(
         self,
-        shape: tuple[int, int] = (256, 256),
+        shape: Tuple[int, int] = (256, 256),
         sigma: float = 5,
         amplitude: float = 255,
-        center: tuple[int, int] | None = None,
-        data_source: dict | None = None,
+        center: Optional[Tuple[int, int]] = None,
+        data_source: Optional[dict] = None,
     ):
         def _func(shape, sigma, amplitude, center):
             if center is None:

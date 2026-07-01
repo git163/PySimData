@@ -1,4 +1,6 @@
 """高斯点阵生成器"""
+from typing import Optional, Tuple
+
 import numpy as np
 
 from ..base import BaseGenerator
@@ -17,12 +19,12 @@ class GaussianGrid(BaseGenerator):
 
     def __init__(
         self,
-        shape: tuple[int, int] = (256, 256),
+        shape: Tuple[int, int] = (256, 256),
         mean: float = 0,
         std: float = 1,
         num_points: int = 10,
-        seed: int | None = None,
-        data_source: dict | None = None,
+        seed: Optional[int] = None,
+        data_source: Optional[dict] = None,
     ):
         def _func(shape, mean, std, num_points, seed):
             # 生成 n*n 个小束斑组成的点阵

@@ -1,4 +1,6 @@
 """单边指数衰减生成器"""
+from typing import Optional, Tuple
+
 import numpy as np
 
 from ..base import BaseGenerator
@@ -16,11 +18,11 @@ class ExponentialDecay(BaseGenerator):
 
     def __init__(
         self,
-        shape: tuple[int, int] = (256, 256),
+        shape: Tuple[int, int] = (256, 256),
         tau: float = 10.0,
         amplitude: float = 255.0,
         direction: str = "x",
-        data_source: dict | None = None,
+        data_source: Optional[dict] = None,
     ):
         def _func(shape, tau, amplitude, direction):
             if direction == "x":

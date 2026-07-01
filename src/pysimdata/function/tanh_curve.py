@@ -1,4 +1,6 @@
 """双曲正切 (tanh) 生成器"""
+from typing import Optional, Tuple
+
 import numpy as np
 
 from ..base import BaseGenerator
@@ -16,11 +18,11 @@ class TanhCurve(BaseGenerator):
 
     def __init__(
         self,
-        x_range: tuple[float, float] = (-3, 3),
+        x_range: Tuple[float, float] = (-3, 3),
         num_points: int = 100,
         amplitude: float = 1.0,
         y_shape: int = 100,
-        data_source: dict | None = None,
+        data_source: Optional[dict] = None,
     ):
         def _func(x_range, num_points, amplitude, y_shape):
             x = np.linspace(x_range[0], x_range[1], num_points)

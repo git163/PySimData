@@ -1,4 +1,6 @@
 """基础函数曲线生成器"""
+from typing import Optional, Tuple, Union
+
 import numpy as np
 
 from ..base import BaseGenerator
@@ -27,11 +29,11 @@ class FunctionCurve(BaseGenerator):
     def __init__(
         self,
         func: callable = np.sin,
-        x_range: tuple[float, float] = (0, 2 * np.pi),
+        x_range: Tuple[float, float] = (0, 2 * np.pi),
         num_points: int = 100,
         amplitude: float = 1.0,
         y_shape: int = 100,
-        data_source: dict | None = None,
+        data_source: Optional[dict] = None,
     ):
         # 保存原始函数
         self._func_original = func
@@ -69,7 +71,7 @@ class FunctionCurve(BaseGenerator):
         return ax
 
     @classmethod
-    def from_config(cls, config: dict | str) -> "FunctionCurve":
+    def from_config(cls, config: Union[dict, str]) -> "FunctionCurve":
         """从配置创建，支持字符串函数名"""
         if isinstance(config, str):
             config = cls.load_config_file(config)
