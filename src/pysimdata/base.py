@@ -377,7 +377,10 @@ def load(output_dir: str) -> BaseGenerator:
     with open(config_path, "r", encoding="utf-8") as f:
         config = json.load(f)
 
-    cls = BaseGenerator.get_generator_class(config.get("type"))
+    type_name = config.get("type")
+    if not type_name:
+        raise ValueError(f"config.json 缺少 type 字段: {config_path}")
+    cls = BaseGenerator.get_generator_class(type_name)
     gen = cls.from_config(config)
 
     # 定位数据文件：优先 data_file 字段，回退 data.<ext>

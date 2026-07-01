@@ -138,3 +138,35 @@ def test_load_roundtrip_npy():
         loaded = load_dir(out)
     assert loaded.params["shape"] == (32, 32)
     np.testing.assert_array_almost_equal(loaded.data, gen.data)
+
+
+def test_load_uses_file_data_not_regenerate():
+    """有数据文件时 load 使用文件内容，而非按配置重算"""
+    gen = GaussianGrid(shape=(16, 16), num_points=4, seed=3)
+    gen.generate()
+    with tempfile.TemporaryDirectory() as d:
+        out = gen.save_all(os.path.join(d, "g"))
+        # 篡改数据文件为可识别常量（与配置同形状），确认 load 读的是文件内容
+        marker = np.full((16, 16), 7.0)
+        np.savetxt(os.path.join(out, "data.csv"), marker, delimiter=",")
+        loaded = load_dir(out)
+    np.testing.assert_array_almost_equal(loaded.data, marker)
+
+
+def test_load_functioncurve_roundtrip_keeps_func():
+    """FunctionCurve 经 save_all -> load 后，to_config 仍保留正确的 func 名"""
+    gen = FunctionCurve()  # 默认 func=sin
+    gen.generate()
+    with tempfile.TemporaryDirectory() as d:
+        out = gen.save_all(os.path.join(d, "fc"))
+        loaded = load_dir(out)
+    assert loaded.to_config()["params"]["func"] == "sin"
+
+
+def test_load_missing_type_raises():
+    """config.json 缺少 type 字段 -> ValueError"""
+    with tempfile.TemporaryDirectory() as d:
+        with open(os.path.join(d, "config.json"), "w", encoding="utf-8") as f:
+            json.dump({"format": "csv", "params": {}}, f)
+        with pytest.raises(ValueError, match="缺少 type 字段"):
+            load_dir(d)
