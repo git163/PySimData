@@ -12,27 +12,8 @@ import numpy as np
 
 # 把 Python src 加入路径
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
-from pysimdata.function import (
-    GaussianBeam,
-    GaussianGrid,
-    FunctionCurve,
-    ErfCurve,
-    TanhCurve,
-    CoshCurve,
-    ExponentialDecay,
-    BilateralGaussian,
-)
-
-TYPE_MAP = {
-    "GaussianBeam": GaussianBeam,
-    "GaussianGrid": GaussianGrid,
-    "FunctionCurve": FunctionCurve,
-    "ErfCurve": ErfCurve,
-    "TanhCurve": TanhCurve,
-    "CoshCurve": CoshCurve,
-    "ExponentialDecay": ExponentialDecay,
-    "BilateralGaussian": BilateralGaussian,
-}
+from pysimdata.base import BaseGenerator
+import pysimdata.function  # noqa: F401 触发子类自动注册
 
 
 def generate_python(config_path: str, output_dir: str) -> str:
@@ -40,7 +21,7 @@ def generate_python(config_path: str, output_dir: str) -> str:
     with open(config_path, "r", encoding="utf-8") as f:
         config = json.load(f)
 
-    cls = TYPE_MAP[config["type"]]
+    cls = BaseGenerator.get_generator_class(config["type"])
     gen = cls.from_config(config)
     data = gen.generate()
 
